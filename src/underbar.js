@@ -229,16 +229,20 @@
   // Determine whether any of the elements pass a truth test. If no iterator is
   // provided, provide a default one
   _.some = function(collection, iterator) {
-  	if (iterator == undefined ){
-  		var iterator= function(item){return item};
-  	}
-  	var isTrue =  false;
-  	var test=function(item){if(iterator(item)){
-  		isTrue=true;
-  	}}
-  	_.every(collection,test);
-  	return isTrue;
+  	var iteratorForEach=function(item,index,collection){
+  		if(iterator == undefined){
+  			return item;} 
+  		return iterator(item);
+  	};
+  	var isFound=false;
+  	_.each(collection,function(item,index,collection){
+  		if(iteratorForEach(item,index,collection)){
+  			isFound=true;
+  		}
+  	});
+  	return isFound;
   };
+
 
 
   /**
@@ -332,14 +336,15 @@
   // already computed the result for the given argument and return that value
   // instead if possible.
   _.memoize = function(func) {
-  	var calculatedResult = {};
-
-  	return function(){
-  		if(!calculatedResult.hasOwnProperty(arguments)){
-  			calculatedResult[arguments]=func.apply(this,arguments);
+  	var newFunction =  function(valueCache){
+  		var calculatedResult=newFunction.calculatedResult;
+  		if(calculatedResult[valueCache] == undefined){
+  			calculatedResult[valueCache]=func.apply(this,arguments);
   		}
-  		return calculatedResult[arguments];
+  		return calculatedResult[valueCache]
   	};
+  	newFunction.calculatedResult = {};
+  	return newFunction;
   };
 
   // Delays a function for the given number of milliseconds, and then calls
@@ -349,7 +354,8 @@
   // parameter. For example _.delay(someFunction, 500, 'a', 'b') will
   // call someFunction('a', 'b') after 500ms
   _.delay = function(func, wait) {
-  	setTimeout(func,wait,arguments.slice(2));
+  	var otherArguments=Array.prototype.slice.call(arguments,2);
+  	setTimeout(function(){return func.apply(null,otherArguments)},wait);
   };
 
 
@@ -364,10 +370,18 @@
   // input array. For a tip on how to make a copy of an array, see:
   // http://mdn.io/Array.prototype.slice
   _.shuffle = function(array) {
+  	var shuffledArray=array.slice(0);
   	function getRandomInt(min, max) {
   		return Math.floor(Math.random() * (max - min)) + min;
 	}
 
+	for(var swapTo=shuffledArray.length-1; swapTo>0; swapTo--){
+		var swapFrom=getRandomInt(0,swapTo);
+		var temp=shuffledArray[swapTo];
+		shuffledArray[swapTo]=shuffledArray[swapFrom];
+		shuffledArray[swapFrom]=temp;
+	}
+	return shuffledArray;
   };
 
 
